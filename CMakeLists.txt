@@ -5,11 +5,17 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 include(siv3d/Siv3D.cmake)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(Siv3DApp src/Main.cpp)
+if(WIN32)
+    # Siv3D Windows SDK libs are built with static CRT (/MT, /MTd)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    add_executable(Siv3DApp WIN32 src/Main.cpp)
+else()
+    add_executable(Siv3DApp src/Main.cpp)
+endif()
 target_link_libraries(Siv3DApp PRIVATE Siv3D::Siv3D)
 
 # Setup bundle properties
@@ -23,11 +29,11 @@ set_target_properties(Siv3DApp PROPERTIES
 endif()
 
 # Add engine resources to the target
-siv3d_add_resources(Siv3DApp "dll" PLATFORMS WINDOWS)
 siv3d_add_resources(Siv3DApp "engine" EXCLUDE_PATTERNS "engine/shader" "engine/lib")
 siv3d_add_resources(Siv3DApp "engine/shader/d3d11" PLATFORMS WINDOWS)
 siv3d_add_resources(Siv3DApp "engine/shader/glsl")
 siv3d_add_resources(Siv3DApp "engine/shader/msl" PLATFORMS MACOS)
 siv3d_add_resources(Siv3DApp "engine/lib" PLATFORMS MACOS)
 siv3d_add_resources(Siv3DApp "icon.icns" PLATFORMS MACOS)
+siv3d_add_resources(Siv3DApp "icon.ico" PLATFORMS WINDOWS)
 siv3d_add_resources(Siv3DApp "example")

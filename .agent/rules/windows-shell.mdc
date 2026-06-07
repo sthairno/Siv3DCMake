@@ -1,0 +1,51 @@
+---
+description: How to use the shell for Windows development
+alwaysApply: false
+---
+
+# Windows Shell
+
+Preset names and paths are defined in [`CMakePresets.json`](../../CMakePresets.json). See [README.md](../../README.md) and [dev-environment.mdc](dev-environment.mdc).
+
+## Enable Developer PowerShell
+
+Loads Visual Studio dev tools (MSVC, etc.) onto PATH. Run before building on Windows.
+
+```powershell
+Import-Module "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\Tools\Microsoft.VisualStudio.DevShell.dll"
+Enter-VsDevShell 94a893f9 -Arch x64 -HostArch x64
+Set-Location "<repo-root>"
+```
+
+When to run:
+
+- **Once per PowerShell process.** Do not call `Enter-VsDevShell` again in the same session unless you need `-Force`.
+- **Agents / tool runners** often start a fresh shell per command. In that case, combine DevShell setup and the build in a **single invocation**.
+- **`Enter-VsDevShell` changes the current directory.** Run `Set-Location` to the repo root before `cmake`.
+
+## Build
+
+```powershell
+cmake --preset windows-debug
+cmake --build --preset build-windows-debug
+```
+
+Or use a workflow preset:
+
+```powershell
+cmake --workflow --preset workflow-windows-debug
+```
+
+Release:
+
+```powershell
+cmake --workflow --preset workflow-windows-release
+```
+
+## Run
+
+Output path comes from the `windows-debug` preset's `binaryDir`:
+
+```powershell
+.\build\Debug\Siv3DApp.exe
+```

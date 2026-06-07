@@ -1,9 +1,10 @@
 # Config
 
 set(SIV3D_VERSION "0.6.16")
-set(SIV3D_ROOT "${CMAKE_CURRENT_LIST_DIR}/sdk/${SIV3D_VERSION}")
+set(SIV3D_ROOT "${CMAKE_CURRENT_LIST_DIR}/../sdk/${SIV3D_VERSION}")
 set(SIV3D_INCLUDE_DIR "${SIV3D_ROOT}/include")
-set(SIV3D_LIB_DIR "${SIV3D_ROOT}/lib/macOS")
+set(SIV3D_LIB_DIR "${SIV3D_ROOT}/lib/Windows")
+set(SIV3D_GENERATED_RC_PATH "${CMAKE_BINARY_DIR}/Resource.rc")
 set(SIV3D_DOWNLOAD_DIR "${CMAKE_CURRENT_BINARY_DIR}/siv3d_download")
 set(SIV3D_EXTRACTED FALSE)
 if(EXISTS "${SIV3D_ROOT}" AND IS_DIRECTORY "${SIV3D_ROOT}")
@@ -11,6 +12,8 @@ if(EXISTS "${SIV3D_ROOT}" AND IS_DIRECTORY "${SIV3D_ROOT}")
 endif()
 
 set(SIV3D_WINDOWS_ZIP_URL "https://siv3d.jp/downloads/Siv3D/manual/0.6.16/OpenSiv3D_SDK_${SIV3D_VERSION}.zip")
+
+enable_language(RC)
 
 # Download and extract Siv3D SDK
 
@@ -41,62 +44,149 @@ if(NOT SIV3D_EXTRACTED)
     message(STATUS "Extracting Siv3D SDK")
 
     if(NOT EXISTS "${SIV3D_WINDOWS_TEMP_INNER_DIR}")
-    execute_process(
-        COMMAND unzip -q "${SIV3D_WINDOWS_TEMP_ZIP_PATH}" -d "${SIV3D_DOWNLOAD_DIR}"
-        RESULT_VARIABLE unzip_result
-        OUTPUT_QUIET
-        ERROR_QUIET
+        execute_process(
+            COMMAND powershell -NoProfile -ExecutionPolicy Bypass -Command
+                "Expand-Archive -LiteralPath '${SIV3D_WINDOWS_TEMP_ZIP_PATH}' -DestinationPath '${SIV3D_DOWNLOAD_DIR}' -Force"
+            RESULT_VARIABLE extract_result
+            OUTPUT_QUIET
+            ERROR_VARIABLE extract_error
         )
-        if(NOT unzip_result EQUAL 0)
-            message(FATAL_ERROR "Failed to extract ZIP file: ${unzip_result}")
+        if(NOT extract_result EQUAL 0)
+            message(FATAL_ERROR "Failed to extract ZIP file: ${extract_result}\n${extract_error}")
         endif()
     endif()
 
-    file(COPY "${SIV3D_WINDOWS_TEMP_INNER_DIR}/lib/macOS/" DESTINATION "${SIV3D_LIB_DIR}")
+    file(COPY "${SIV3D_WINDOWS_TEMP_INNER_DIR}/lib/Windows/" DESTINATION "${SIV3D_LIB_DIR}")
     file(COPY "${SIV3D_WINDOWS_TEMP_INNER_DIR}/include/" DESTINATION "${SIV3D_INCLUDE_DIR}")
 endif()
 
 # Setup Siv3D::Siv3D target
 
-find_library(AVFoundation_FRAMEWORK AVFoundation)
-find_library(AudioToolbox_FRAMEWORK AudioToolbox)
-find_library(CoreMedia_FRAMEWORK CoreMedia)
+add_library(Siv3DWindows INTERFACE)
+add_library(Siv3D::Siv3D ALIAS Siv3DWindows)
 
-add_library(Siv3D::Siv3D STATIC IMPORTED)
+# lld-link misparses forward-slash library paths (e.g. /curl/... as flags).
+# Pass -libpath per directory and link by filename only.
+set(SIV3D_WINDOWS_LINK_DIRS
+    "${SIV3D_LIB_DIR}"
+    "${SIV3D_LIB_DIR}/boost"
+    "${SIV3D_LIB_DIR}/curl"
+    "${SIV3D_LIB_DIR}/freetype"
+    "${SIV3D_LIB_DIR}/glew"
+    "${SIV3D_LIB_DIR}/harfbuzz"
+    "${SIV3D_LIB_DIR}/libgif"
+    "${SIV3D_LIB_DIR}/libjpeg-turbo"
+    "${SIV3D_LIB_DIR}/libogg"
+    "${SIV3D_LIB_DIR}/libpng"
+    "${SIV3D_LIB_DIR}/libtiff"
+    "${SIV3D_LIB_DIR}/libvorbis"
+    "${SIV3D_LIB_DIR}/libwebp"
+    "${SIV3D_LIB_DIR}/Oniguruma"
+    "${SIV3D_LIB_DIR}/opencv"
+    "${SIV3D_LIB_DIR}/opus"
+    "${SIV3D_LIB_DIR}/zlib"
+)
+foreach(link_dir IN LISTS SIV3D_WINDOWS_LINK_DIRS)
+    target_link_options(Siv3DWindows INTERFACE "LINKER:-libpath:${link_dir}")
+endforeach()
 
-set_target_properties(Siv3D::Siv3D PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${SIV3D_INCLUDE_DIR};${SIV3D_INCLUDE_DIR}/ThirdParty"
+target_link_libraries(Siv3DWindows INTERFACE
+    optimized Siv3D.lib
+    debug     Siv3D_d.lib
+    optimized libboost_filesystem-vc143-mt-s-x64-1_83.lib
+    debug     libboost_filesystem-vc143-mt-sgd-x64-1_83.lib
+    optimized libcurl.lib
+    debug     libcurl-d.lib
+    optimized freetype.lib
+    debug     freetyped.lib
+    optimized glew32s.lib
+    debug     glew32sd.lib
+    optimized harfbuzz.lib
+    debug     harfbuzz_d.lib
+    optimized libgif.lib
+    debug     libgif_d.lib
+    optimized turbojpeg-static.lib
+    debug     turbojpeg-static_d.lib
+    optimized libogg.lib
+    debug     libogg_d.lib
+    optimized libpng16.lib
+    debug     libpng16_d.lib
+    optimized tiff.lib
+    debug     tiffd.lib
+    optimized libvorbis_static.lib
+    debug     libvorbis_static_d.lib
+    optimized libvorbisfile_static.lib
+    debug     libvorbisfile_static_d.lib
+    optimized libwebp.lib
+    debug     libwebp_debug.lib
+    optimized Oniguruma.lib
+    debug     Oniguruma_d.lib
+    optimized opencv_core451.lib
+    debug     opencv_core451d.lib
+    optimized opencv_imgcodecs451.lib
+    debug     opencv_imgcodecs451d.lib
+    optimized opencv_imgproc451.lib
+    debug     opencv_imgproc451d.lib
+    optimized opencv_objdetect451.lib
+    debug     opencv_objdetect451d.lib
+    optimized opencv_photo451.lib
+    debug     opencv_photo451d.lib
+    optimized opencv_videoio451.lib
+    debug     opencv_videoio451d.lib
+    optimized opus.lib
+    debug     opus_d.lib
+    optimized opusfile.lib
+    debug     opusfile_d.lib
+    optimized zlib.lib
+    debug     zlibd.lib
 )
 
-target_link_libraries(Siv3D::Siv3D INTERFACE
-    "${SIV3D_LIB_DIR}/libSiv3D.a"
-    "${SIV3D_LIB_DIR}/boost/libboost_filesystem.a"
-    "${SIV3D_LIB_DIR}/freetype/libfreetype.a"
-    "${SIV3D_LIB_DIR}/harfbuzz/libharfbuzz.a"
-    "${SIV3D_LIB_DIR}/libgif/liblibgif.a"
-    "${SIV3D_LIB_DIR}/libjpeg-turbo/libturbojpeg.a"
-    "${SIV3D_LIB_DIR}/libogg/libogg.a"
-    "${SIV3D_LIB_DIR}/libpng/libpng16.a"
-    "${SIV3D_LIB_DIR}/libtiff/libtiff.a"
-    "${SIV3D_LIB_DIR}/libvorbis/libvorbis.a"
-    "${SIV3D_LIB_DIR}/libvorbis/libvorbisenc.a"
-    "${SIV3D_LIB_DIR}/libvorbis/libvorbisfile.a"
-    "${SIV3D_LIB_DIR}/libwebp/libwebp.a"
-    "${SIV3D_LIB_DIR}/opencv/libopencv_core.a"
-    "${SIV3D_LIB_DIR}/opencv/libopencv_imgcodecs.a"
-    "${SIV3D_LIB_DIR}/opencv/libopencv_imgproc.a"
-    "${SIV3D_LIB_DIR}/opencv/libopencv_objdetect.a"
-    "${SIV3D_LIB_DIR}/opencv/libopencv_photo.a"
-    "${SIV3D_LIB_DIR}/opencv/libopencv_videoio.a"
-    "${SIV3D_LIB_DIR}/opus/libopus.a"
-    "${SIV3D_LIB_DIR}/opus/libopusfile.a"
-    "${SIV3D_LIB_DIR}/zlib/libzlib.a"
-    "-lcurl"
-    ${AVFoundation_FRAMEWORK}
-    ${AudioToolbox_FRAMEWORK}
-    ${CoreMedia_FRAMEWORK}
+target_include_directories(Siv3DWindows INTERFACE
+    "${SIV3D_INCLUDE_DIR}"
+    "${SIV3D_INCLUDE_DIR}/ThirdParty"
 )
 
-message(STATUS "Configured Siv3D SDK [Windows]: ${SIV3D_WINDOWS_ROOT}")
+function(_siv3d_platform_add_resource target resource rel_path)
+    set_property(GLOBAL APPEND PROPERTY SIV3D_RESOURCES_PATH "${resource}")
+    set_property(GLOBAL APPEND PROPERTY SIV3D_RESOURCES_RELPATH "${rel_path}")
+    set_property(GLOBAL PROPERTY SIV3D_RESOURCES_TARGET "${target}")
+endfunction()
+
+function(_siv3d_windows_finalize_rc)
+    get_property(target GLOBAL PROPERTY SIV3D_RESOURCES_TARGET)
+    if(NOT target)
+        return()
+    endif()
+
+    get_property(paths GLOBAL PROPERTY SIV3D_RESOURCES_PATH)
+    get_property(rel_paths GLOBAL PROPERTY SIV3D_RESOURCES_RELPATH)
+
+    file(WRITE "${SIV3D_GENERATED_RC_PATH}" "# include <Siv3D/Windows/Resource.hpp>\n\n")
+
+    list(LENGTH paths path_count)
+    math(EXPR last_index "${path_count} - 1")
+    foreach(i RANGE ${last_index})
+        list(GET paths ${i} path)
+        list(GET rel_paths ${i} rel_path)
+        if(rel_path STREQUAL "icon.ico")
+            file(APPEND "${SIV3D_GENERATED_RC_PATH}" "DefineResource(100, ICON, ${path})\n")
+        else()
+            file(APPEND "${SIV3D_GENERATED_RC_PATH}" "DefineResource(${rel_path}, FILE, ${path})\n")
+        endif()
+    endforeach()
+
+    set_source_files_properties("${SIV3D_GENERATED_RC_PATH}" PROPERTIES
+        GENERATED TRUE
+        OBJECT_DEPENDS "${paths}"
+    )
+    target_sources(${target} PRIVATE "${SIV3D_GENERATED_RC_PATH}")
+    target_compile_options(${target} PRIVATE
+        "$<$<COMPILE_LANGUAGE:RC>:-I${SIV3D_INCLUDE_DIR}>"
+    )
+endfunction()
+cmake_language(DEFER CALL _siv3d_windows_finalize_rc)
+
+message(STATUS "Configured Siv3D SDK [Windows]: ${SIV3D_ROOT}")
 message(STATUS "  Include: ${SIV3D_INCLUDE_DIR}")
 message(STATUS "  Library: ${SIV3D_LIB_DIR}")
+message(STATUS "  Resource: ${SIV3D_GENERATED_RC_PATH}")

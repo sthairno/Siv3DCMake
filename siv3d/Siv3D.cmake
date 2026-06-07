@@ -10,7 +10,7 @@ else()
     message(FATAL_ERROR "Unsupported platform: ${CMAKE_HOST_SYSTEM_NAME}")
 endif()
 
-function(siv3d_add_resources target directory)
+function(siv3d_add_resources target path)
     cmake_parse_arguments(SIV3D_RESOURCES
         ""
         ""
@@ -23,20 +23,23 @@ function(siv3d_add_resources target directory)
     endif()
 
     if(NOT SIV3D_PLATFORM IN_LIST SIV3D_RESOURCES_PLATFORMS OR
-       NOT COMMAND _siv3d_platform_add_resource)
+        NOT COMMAND _siv3d_platform_add_resource)
         return()
     endif()
 
     set(resource_root "${CMAKE_CURRENT_SOURCE_DIR}/resources")
-    if(IS_ABSOLUTE "${directory}")
-        set(resource_dir "${directory}")
-    else()
-        set(resource_dir "${resource_root}/${directory}")
-    endif()
+    set(path "${resource_root}/${path}")
 
-    file(GLOB_RECURSE resource_files CONFIGURE_DEPENDS
-        "${resource_dir}/*"
-    )
+    if(IS_DIRECTORY "${path}")
+        file(GLOB_RECURSE resource_files CONFIGURE_DEPENDS
+            "${path}/*"
+        )
+    elseif(EXISTS "${path}")
+        set(resource_files "${path}")
+    else()
+        message(WARNING "Siv3D resource path not found: ${path}")
+        return()
+    endif()
 
     foreach(resource IN LISTS resource_files)
         if(IS_DIRECTORY "${resource}")

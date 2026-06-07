@@ -1,0 +1,63 @@
+---
+description: Shared development environment rules for humans and AI agents
+alwaysApply: true
+---
+
+# Development Environment
+
+## Single Source of Truth
+
+**[`CMakePresets.json`](../../CMakePresets.json) is the SSOT** for configure, build, and output paths.
+
+- Do not hardcode build paths in scripts or configs when a preset can express them.
+- Derive executable paths from the active configure preset's `binaryDir` (e.g. Debug → `build/Debug/`).
+- See [README.md](../../README.md) for the full preset table.
+
+## Build Commands
+
+Use preset names from `CMakePresets.json`:
+
+```bash
+cmake --preset <configure-preset>
+cmake --build --preset <build-preset>
+```
+
+Or combine with a workflow preset:
+
+```bash
+cmake --workflow --preset workflow-<platform>-debug
+```
+
+| Platform | Debug configure | Debug build | Debug workflow |
+|----------|-----------------|-------------|----------------|
+| Windows | `windows-debug` | `build-windows-debug` | `workflow-windows-debug` |
+| Linux | `linux-debug` | `build-linux-debug` | `workflow-linux-debug` |
+| macOS | `macos-debug` | `build-macos-debug` | `workflow-macos-debug` |
+
+Target name: **`Siv3DApp`**
+
+## VS Code Integration
+
+Shared settings live in [`.vscode/settings.json`](../../.vscode/settings.json):
+
+- `cmake.useCMakePresets: always` — presets drive CMake Tools
+- `cmake.copyCompileCommands` — copies `compile_commands.json` to `build/` for clangd
+- `cmake.debugConfig` — CodeLLDB quick debug from CMake sidebar
+- [`.vscode/launch.json`](../../.vscode/launch.json) — F5 debug via `cmake.launchTargetPath` with `targetName: Siv3DApp`
+
+Configure must succeed before launch paths resolve.
+
+## Windows Shell
+
+On Windows, CLI builds need the Visual Studio developer environment. See [windows-shell.mdc](windows-shell.mdc).
+
+Agents that run one command per shell invocation must combine DevShell setup and build in a **single** shell command.
+
+## Debugging
+
+- **Inside VS Code:** use F5 (`launch.json`) or CMake sidebar Debug (`cmake.debugConfig`). Both use CodeLLDB (`type: lldb`).
+- **From CLI:** run the built executable under the preset's `binaryDir` after building.
+
+## IntelliSense
+
+After configure, `compile_commands.json` appears at `build/compile_commands.json`. clangd reads it via `--compile-commands-dir=${workspaceFolder}/build`.

@@ -97,10 +97,6 @@ target_link_libraries(Siv3D::Siv3D INTERFACE
     ${CoreMedia_FRAMEWORK}
 )
 
-message(STATUS "Configured Siv3D SDK [Mac]: ${SIV3D_ROOT}")
-message(STATUS "  Include: ${SIV3D_INCLUDE_DIR}")
-message(STATUS "  Library: ${SIV3D_LIB_DIR}")
-
 function(_siv3d_platform_add_resource target resource rel_path)
     get_filename_component(rel_dir "${rel_path}" DIRECTORY)
 
@@ -119,3 +115,7 @@ function(_siv3d_platform_add_resource target resource rel_path)
         "${resource}"
     )
 endfunction()
+
+message(STATUS "Configured Siv3D SDK [Mac]: ${SIV3D_ROOT}")
+message(STATUS "  Include: ${SIV3D_INCLUDE_DIR}")
+message(STATUS "  Library: ${SIV3D_LIB_DIR}")
