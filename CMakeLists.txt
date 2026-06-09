@@ -20,6 +20,7 @@ target_link_libraries(Siv3DApp PRIVATE Siv3D::Siv3D)
 
 # Setup bundle properties
 set_target_properties(Siv3DApp PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY         "${PROJECT_SOURCE_DIR}/App"
     RUNTIME_OUTPUT_DIRECTORY_DEBUG   "${PROJECT_SOURCE_DIR}/App"
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${PROJECT_SOURCE_DIR}/App"
     OUTPUT_NAME "Siv3DApp"
