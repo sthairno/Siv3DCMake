@@ -1,3 +1,4 @@
-siv3d/sdk/
+siv3d/sdk/*
+!.gitkeep
 build/
 AS_DEBUG/

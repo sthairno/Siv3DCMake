@@ -1,0 +1,3 @@
+# Cursor hides files from the agent using .gitignore, so cancelling that behavior
+!build/
+!siv3d/sdk/

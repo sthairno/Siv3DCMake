@@ -97,23 +97,25 @@ target_link_libraries(Siv3D::Siv3D INTERFACE
     ${CoreMedia_FRAMEWORK}
 )
 
-function(_siv3d_platform_add_resource target resource rel_path)
-    get_filename_component(rel_dir "${rel_path}" DIRECTORY)
-
-    if(rel_dir STREQUAL "")
-        set(package_location "Resources")
-    else()
-        set(package_location "Resources/${rel_dir}")
+function(_siv3d_platform_add_resources target resource_paths resource_types)
+    list(LENGTH resource_paths path_count)
+    if(path_count EQUAL 0)
+        return()
     endif()
 
-    set_source_files_properties("${resource}" PROPERTIES
-        HEADER_FILE_ONLY TRUE
-        MACOSX_PACKAGE_LOCATION "${package_location}"
-    )
+    math(EXPR last_index "${path_count} - 1")
+    foreach(i RANGE ${last_index})
+        list(GET resource_paths ${i} resource_path)
+        file(RELATIVE_PATH resource_relpath "${SIV3D_RESOURCES_PATH}" "${resource_path}")
+        get_filename_component(resource_directory_relpath "${resource_relpath}" DIRECTORY)
 
-    target_sources(${target} PRIVATE
-        "${resource}"
-    )
+        set_source_files_properties("${resource_path}" PROPERTIES
+            HEADER_FILE_ONLY TRUE
+            MACOSX_PACKAGE_LOCATION "Resources/${resource_directory_relpath}"
+        )
+
+        target_sources(${target} PRIVATE "${resource_path}")
+    endforeach()
 endfunction()
 
 message(STATUS "Configured Siv3D SDK [Mac]: ${SIV3D_ROOT}")

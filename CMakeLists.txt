@@ -19,21 +19,52 @@ endif()
 target_link_libraries(Siv3DApp PRIVATE Siv3D::Siv3D)
 
 # Setup bundle properties
-if (APPLE)
 set_target_properties(Siv3DApp PROPERTIES
     MACOSX_BUNDLE ON
     MACOSX_BUNDLE_INFO_PLIST "${PROJECT_SOURCE_DIR}/src/macOS/Info.plist"
     MACOSX_BUNDLE_BUNDLE_NAME "${PROJECT_NAME}"
     MACOSX_BUNDLE_GUI_IDENTIFIER "com.example.siv3d-app"
 )
-endif()
 
-# Add engine resources to the target
-siv3d_add_resources(Siv3DApp "engine" EXCLUDE_PATTERNS "engine/shader" "engine/lib")
-siv3d_add_resources(Siv3DApp "engine/shader/d3d11" PLATFORMS WINDOWS)
-siv3d_add_resources(Siv3DApp "engine/shader/glsl")
-siv3d_add_resources(Siv3DApp "engine/shader/msl" PLATFORMS MACOS)
-siv3d_add_resources(Siv3DApp "engine/lib" PLATFORMS MACOS)
-siv3d_add_resources(Siv3DApp "icon.icns" PLATFORMS MACOS)
-siv3d_add_resources(Siv3DApp "icon.ico" PLATFORMS WINDOWS)
-siv3d_add_resources(Siv3DApp "example")
+# アプリに埋め込むリソースを定義 / Define resources to embed in the application
+#
+# 使い方 / Usage:
+#
+#   siv3d_resources(
+#       target
+#       platform resource-type path
+#       ...
+#   )
+# 
+# パラメータ / Parameters:
+#
+#   platform
+#    - ALL: 全てのプラットフォーム / All platforms
+#    - MACOS:  macOS のみ / macOS only
+#    - WINDOWS: Windows のみ / Windows only
+#    - LINUX: Linux のみ / Linux only
+#
+#   resource-type
+#    - EMBED: リソースを実行ファイルに埋め込む / Embed the resource into the executable
+#    - COPY: リソースを実行ファイルと同じディレクトリにコピーする / Copy the resource next to the executable file
+#
+#    ! MacOSビルドのみ、resource-typeにかかわらず常にEMBEDの動作になります
+#    ! On MacOS build, the behavior is always EMBED regardless of the resource-type
+#
+#   path: ディレクトリまたはファイルのパス / Path to the directory or file
+
+siv3d_resources(
+    Siv3DApp
+    ALL     EMBED "engine/font"
+    MACOS   EMBED "engine/lib/soundtouch"
+    WINDOWS EMBED "engine/shader/d3d11"
+    MACOS   EMBED "engine/shader/msl"
+    LINUX   EMBED "engine/shader/essl"
+    ALL     EMBED "engine/shader/glsl"
+    ALL     EMBED "engine/soundfont"
+    ALL     EMBED "engine/texture"
+    WINDOWS COPY  "dll"
+    MACOS   EMBED "icon.icns"
+    WINDOWS EMBED "icon.ico"
+    ALL     COPY  "example"
+)

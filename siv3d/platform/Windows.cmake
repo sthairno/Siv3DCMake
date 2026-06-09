@@ -4,7 +4,6 @@ set(SIV3D_VERSION "0.6.16")
 set(SIV3D_ROOT "${CMAKE_CURRENT_LIST_DIR}/../sdk/${SIV3D_VERSION}")
 set(SIV3D_INCLUDE_DIR "${SIV3D_ROOT}/include")
 set(SIV3D_LIB_DIR "${SIV3D_ROOT}/lib/Windows")
-set(SIV3D_GENERATED_RC_PATH "${CMAKE_BINARY_DIR}/Resource.rc")
 set(SIV3D_DOWNLOAD_DIR "${CMAKE_CURRENT_BINARY_DIR}/siv3d_download")
 set(SIV3D_EXTRACTED FALSE)
 if(EXISTS "${SIV3D_ROOT}" AND IS_DIRECTORY "${SIV3D_ROOT}")
@@ -146,47 +145,81 @@ target_include_directories(Siv3DWindows INTERFACE
     "${SIV3D_INCLUDE_DIR}/ThirdParty"
 )
 
-function(_siv3d_platform_add_resource target resource rel_path)
-    set_property(GLOBAL APPEND PROPERTY SIV3D_RESOURCES_PATH "${resource}")
-    set_property(GLOBAL APPEND PROPERTY SIV3D_RESOURCES_RELPATH "${rel_path}")
-    set_property(GLOBAL PROPERTY SIV3D_RESOURCES_TARGET "${target}")
-endfunction()
-
-function(_siv3d_windows_finalize_rc)
-    get_property(target GLOBAL PROPERTY SIV3D_RESOURCES_TARGET)
-    if(NOT target)
+function(_siv3d_windows_apply_embed_resources target)
+    get_target_property(embed_paths ${target} SIV3D_EMBED_PATHS)
+    if(NOT embed_paths)
         return()
     endif()
 
-    get_property(paths GLOBAL PROPERTY SIV3D_RESOURCES_PATH)
-    get_property(rel_paths GLOBAL PROPERTY SIV3D_RESOURCES_RELPATH)
+    get_target_property(embed_rel_paths ${target} SIV3D_EMBED_RELPATHS)
+    set(rc_path "${CMAKE_BINARY_DIR}/${target}_Resource.rc")
 
-    file(WRITE "${SIV3D_GENERATED_RC_PATH}" "# include <Siv3D/Windows/Resource.hpp>\n\n")
+    file(WRITE "${rc_path}" "")
 
-    list(LENGTH paths path_count)
+    list(LENGTH embed_paths path_count)
     math(EXPR last_index "${path_count} - 1")
     foreach(i RANGE ${last_index})
-        list(GET paths ${i} path)
-        list(GET rel_paths ${i} rel_path)
+        list(GET embed_paths ${i} path)
+        list(GET embed_rel_paths ${i} rel_path)
         if(rel_path STREQUAL "icon.ico")
-            file(APPEND "${SIV3D_GENERATED_RC_PATH}" "DefineResource(100, ICON, ${path})\n")
+            file(APPEND "${rc_path}" "DefineResource(100, ICON, ${path})\n")
         else()
-            file(APPEND "${SIV3D_GENERATED_RC_PATH}" "DefineResource(${rel_path}, FILE, ${path})\n")
+            file(APPEND "${rc_path}" "DefineResource(${rel_path}, FILE, ${path})\n")
         endif()
     endforeach()
 
-    set_source_files_properties("${SIV3D_GENERATED_RC_PATH}" PROPERTIES
-        GENERATED TRUE
-        OBJECT_DEPENDS "${paths}"
+
+endfunction()
+
+function(_siv3d_platform_add_resources target resource_paths resource_types)
+    list(LENGTH resource_paths path_count)
+    if(path_count EQUAL 0)
+        return()
+    endif()
+
+    set_target_properties(${target} PROPERTIES
+        RESOURCE "${resource_paths}"
     )
-    target_sources(${target} PRIVATE "${SIV3D_GENERATED_RC_PATH}")
+    
+    set(generated_rc_path "${CMAKE_BINARY_DIR}/${target}_resource.rc")
+    set(generated_rc_content "# include <Siv3D/Windows/Resource.hpp>\n\n")
+
+    math(EXPR last_index "${path_count} - 1")
+    foreach(i RANGE ${last_index})
+        list(GET resource_paths ${i} resource_abspath)
+        list(GET resource_types ${i} resource_type)
+        file(RELATIVE_PATH resource_relpath "${SIV3D_RESOURCES_PATH}" "${resource_abspath}")
+
+        if(resource_type STREQUAL "EMBED")
+            if(resource_relpath STREQUAL "icon.ico")
+                set(generated_rc_content "${generated_rc_content}DefineResource(100, ICON, ${resource_abspath})\n")
+            else()
+                set(generated_rc_content "${generated_rc_content}DefineResource(${resource_relpath}, FILE, ${resource_abspath})\n")
+            endif()
+        elseif(resource_type STREQUAL "COPY")
+            get_filename_component(resource_directory_relpath "${resource_relpath}" DIRECTORY)
+            add_custom_command(TARGET ${target} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E make_directory
+                    "$<TARGET_FILE_DIR:${target}>/resources/${resource_directory_relpath}"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${resource_abspath}"
+                    "$<TARGET_FILE_DIR:${target}>/resources/${resource_relpath}"
+                VERBATIM
+            )
+        endif()
+    endforeach()
+
+    file(WRITE "${generated_rc_path}" "${generated_rc_content}")
+    set_source_files_properties("${generated_rc_path}" PROPERTIES
+        GENERATED TRUE
+        OBJECT_DEPENDS "${embed_paths}"
+    )
+    target_sources(${target} PRIVATE "${generated_rc_path}")
     target_compile_options(${target} PRIVATE
         "$<$<COMPILE_LANGUAGE:RC>:-I${SIV3D_INCLUDE_DIR}>"
     )
 endfunction()
-cmake_language(DEFER CALL _siv3d_windows_finalize_rc)
 
 message(STATUS "Configured Siv3D SDK [Windows]: ${SIV3D_ROOT}")
 message(STATUS "  Include: ${SIV3D_INCLUDE_DIR}")
 message(STATUS "  Library: ${SIV3D_LIB_DIR}")
-message(STATUS "  Resource: ${SIV3D_GENERATED_RC_PATH}")
