@@ -200,10 +200,10 @@ function(_siv3d_platform_add_resources target resource_paths resource_types)
             get_filename_component(resource_directory_relpath "${resource_relpath}" DIRECTORY)
             add_custom_command(TARGET ${target} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E make_directory
-                    "$<TARGET_FILE_DIR:${target}>/resources/${resource_directory_relpath}"
+                    "$<TARGET_FILE_DIR:${target}>/${resource_directory_relpath}"
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                     "${resource_abspath}"
-                    "$<TARGET_FILE_DIR:${target}>/resources/${resource_relpath}"
+                    "$<TARGET_FILE_DIR:${target}>/${resource_relpath}"
                 VERBATIM
             )
         endif()

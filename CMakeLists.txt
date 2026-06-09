@@ -21,6 +21,7 @@ target_link_libraries(Siv3DApp PRIVATE Siv3D::Siv3D)
 # Setup bundle properties
 set_target_properties(Siv3DApp PROPERTIES
     MACOSX_BUNDLE ON
+    RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/App"
     MACOSX_BUNDLE_INFO_PLIST "${PROJECT_SOURCE_DIR}/src/macOS/Info.plist"
     MACOSX_BUNDLE_BUNDLE_NAME "${PROJECT_NAME}"
     MACOSX_BUNDLE_GUI_IDENTIFIER "com.example.siv3d-app"

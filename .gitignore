@@ -2,3 +2,4 @@ siv3d/sdk/*
 !.gitkeep
 build/
 AS_DEBUG/
+App/
