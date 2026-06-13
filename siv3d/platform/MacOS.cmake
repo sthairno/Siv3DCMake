@@ -113,9 +113,9 @@ function(_siv3d_platform_add_resources target resource_paths resource_types)
             HEADER_FILE_ONLY TRUE
             MACOSX_PACKAGE_LOCATION "Resources/${resource_directory_relpath}"
         )
-
-        target_sources(${target} PRIVATE "${resource_path}")
     endforeach()
+
+    target_sources(${target} PRIVATE ${resource_paths})
 endfunction()
 
 message(STATUS "Configured Siv3D SDK [Mac]: ${SIV3D_ROOT}")

@@ -145,32 +145,6 @@ target_include_directories(Siv3DWindows INTERFACE
     "${SIV3D_INCLUDE_DIR}/ThirdParty"
 )
 
-function(_siv3d_windows_apply_embed_resources target)
-    get_target_property(embed_paths ${target} SIV3D_EMBED_PATHS)
-    if(NOT embed_paths)
-        return()
-    endif()
-
-    get_target_property(embed_rel_paths ${target} SIV3D_EMBED_RELPATHS)
-    set(rc_path "${CMAKE_BINARY_DIR}/${target}_Resource.rc")
-
-    file(WRITE "${rc_path}" "")
-
-    list(LENGTH embed_paths path_count)
-    math(EXPR last_index "${path_count} - 1")
-    foreach(i RANGE ${last_index})
-        list(GET embed_paths ${i} path)
-        list(GET embed_rel_paths ${i} rel_path)
-        if(rel_path STREQUAL "icon.ico")
-            file(APPEND "${rc_path}" "DefineResource(100, ICON, ${path})\n")
-        else()
-            file(APPEND "${rc_path}" "DefineResource(${rel_path}, FILE, ${path})\n")
-        endif()
-    endforeach()
-
-
-endfunction()
-
 function(_siv3d_platform_add_resources target resource_paths resource_types)
     list(LENGTH resource_paths path_count)
     if(path_count EQUAL 0)
