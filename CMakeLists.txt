@@ -9,22 +9,32 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if(WIN32)
-    # Siv3D Windows SDK libs are built with static CRT (/MT, /MTd)
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    add_executable(Siv3DApp WIN32 src/Main.cpp)
-else()
-    add_executable(Siv3DApp src/Main.cpp)
-endif()
-target_link_libraries(Siv3DApp PRIVATE Siv3D::Siv3D)
+# アプリケーションのソースファイルの定義 / Definition of the application source files
+#
+# .cpp ファイルをAPP_SOURCE_FILESに追加することでビルド対象になります。
+# You can add .cpp files to APP_SOURCE_FILES to include them in the build.
 
-# Setup bundle properties
+set(APP_SOURCE_FILES
+    src/Main.cpp
+)
+
+# 実行ファイルの作成と Siv3D ライブラリのリンク / Creation of the executable and linking of the Siv3D library
+
+add_executable(Siv3DApp ${APP_SOURCE_FILES})
+target_link_libraries(Siv3DApp
+    PRIVATE Siv3D::Siv3D
+)
+
+# 実行ファイル・アプリバンドルの各種プロパティの設定 / Properties of the executable and app bundle
+
 set_target_properties(Siv3DApp PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY         "${PROJECT_SOURCE_DIR}/App"
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG   "${PROJECT_SOURCE_DIR}/App"
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${PROJECT_SOURCE_DIR}/App"
+    # 実行ファイルの出力先ディレクトリ / Output directory for the executable
+    RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/App"
+    # 実行ファイルの名前 / Name of the executable
     OUTPUT_NAME "Siv3DApp"
+    # デバッグビルド時に"-debug"を末尾に追加 / Append "-debug" to the output name for debug builds
     DEBUG_POSTFIX "-debug"
+    # macOSのビルド設定 / Build settings for macOS
     MACOSX_BUNDLE ON
     MACOSX_BUNDLE_INFO_PLIST "${PROJECT_SOURCE_DIR}/src/macOS/Info.plist"
     MACOSX_BUNDLE_GUI_IDENTIFIER "com.example.siv3d-app"

@@ -3,7 +3,7 @@
 - App: Output directory for distributable executables
 - build: Intermediate directory for CMake build
 - resources: Runtime assets consumed by Siv3D (Settings are available in `siv3d_resources()`)
-- siv3d: Directory related to the Siv3D SDK. Normally, you do not need to interact with this in regular development.
+- siv3d: Directory related to the Siv3D SDK. Normally, you do not need to edit with this in regular development.
   - sdk/<version>/include: Include directory for the Siv3D SDK. All APIs are declared here.
   - docs: Siv3D documentation. Basic usage and examples for API usage are written here. The Japanese and English editions contain the same content.
   - Siv3D.cmake: CMake plugin for building Siv3D projects
