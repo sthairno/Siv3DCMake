@@ -15,3 +15,39 @@
 - CMakeLists.txt: Project configuration for the Siv3D app
 - CMakePresets.json: Single source of truth for configure / build / workflow presets
 - README.md: Summary document for users
+
+## Siv3D Coding Rule
+
+### Program structure
+
+- Include only `<Siv3D.hpp>`; standard library headers are already included through it
+- Entry point is `void Main()`, not `int main()`
+- Keep the main loop as `while (System::Update()) { ... }`; the window stays open while it returns `true`
+- Exit via window close, Esc, `System::Exit()` (takes effect on the next `System::Update()`), or `return;` (immediate)
+
+### Main loop discipline
+
+- Split work into three parts:
+  - Before the loop: setup (window/scene config, load textures/fonts)
+  - Inside the loop: input handling and drawing
+  - After the loop: rare cleanup (e.g. save on exit)
+- Load heavy resources (e.g. `Texture`, `Font`) once before the loop; never create/destroy them every frame inside the loop
+
+### Simple output
+
+- Use `Print << value;` for quick text/number output
+- Call `ClearPrint()` at the top of the loop to show only the current frame
+
+### Strings and literals
+
+- Always prefix string literals with `U` (UTF-32), e.g. `U"Hello"`
+- Prefix character literals with `U`, e.g. `U'A'`
+
+### Preferred types
+
+- Integers: use sized types such as `int32` and `uint64`; use `size_t` for sizes/indices; avoid `int` and `long`
+- Floating point: prefer `double`; use `float` only where APIs require it
+- Boolean: `bool`
+- Character: `char32`
+- String: `String` (also `StringView`, `FilePath`, `FilePathView` aliases)
+- Containers: `Array<Type>` (dynamic), `std::array<Type, N>` (fixed), `Grid<Type>` (2D), `Optional<Type>`, `HashSet<Type>`, `HashTable<Key, Value>`
