@@ -1,0 +1,41 @@
+name: Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      os:
+        description: Target OS
+        type: choice
+        options:
+          - windows
+          - macos
+      configuration:
+        description: Build configuration
+        type: choice
+        options:
+          - debug
+          - release
+        default: release
+
+jobs:
+  build:
+    runs-on: ${{ fromJSON('{"windows":"windows-latest","macos":"macos-latest"}')[inputs.os] }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/cache@v5
+        with:
+          path: siv3d/sdk
+          key: siv3d-sdk-${{ inputs.os }}-${{ hashFiles('siv3d/platform/*.cmake', 'siv3d/Siv3D.cmake') }}
+          restore-keys: |
+            siv3d-sdk-${{ inputs.os }}-
+
+      - name: Configure and build
+        run: cmake --workflow --preset workflow-${{ inputs.os }}-${{ inputs.configuration }}
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.os }}-${{ inputs.configuration }}-${{ github.sha }}
+          path: App/**
+          if-no-files-found: error
