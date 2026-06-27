@@ -18,26 +18,27 @@ set(APP_SOURCE_FILES
     src/Main.cpp
 )
 
+# 実行ファイル名 / Executable file name
+#
+# 出力例 / Output example:
+#   Windows: App/[APP_EXECUTABLE_NAME].exe
+#   macOS:   App/[APP_EXECUTABLE_NAME].app
+#   Linux:   App/[APP_EXECUTABLE_NAME]
+
+set(APP_EXECUTABLE_NAME "Siv3DApp")
+
+# (macOSのみ) バンドル識別子 / (macOS only) bundle identifier
+# 
+# 特に配布を行いたい場合は、他と被らない固有の識別子を設定してください。
+# Especially when distributing, please set a unique identifier that does not conflict with others.
+
+set(APP_MACOS_IDENTIFIER "com.example.siv3d-app")
+
 # 実行ファイルの作成と Siv3D ライブラリのリンク / Creation of the executable and linking of the Siv3D library
 
 add_executable(Siv3DApp ${APP_SOURCE_FILES})
 target_link_libraries(Siv3DApp
     PRIVATE Siv3D::Siv3D
-)
-
-# 実行ファイル・アプリバンドルの各種プロパティの設定 / Properties of the executable and app bundle
-
-set_target_properties(Siv3DApp PROPERTIES
-    # 実行ファイルの出力先ディレクトリ / Output directory for the executable
-    RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/App"
-    # 実行ファイルの名前 / Name of the executable
-    OUTPUT_NAME "Siv3DApp"
-    # デバッグビルド時に"-debug"を末尾に追加 / Append "-debug" to the output name for debug builds
-    DEBUG_POSTFIX "-debug"
-    # macOSのビルド設定 / Build settings for macOS
-    MACOSX_BUNDLE ON
-    MACOSX_BUNDLE_INFO_PLIST "${PROJECT_SOURCE_DIR}/src/macOS/Info.plist"
-    MACOSX_BUNDLE_GUI_IDENTIFIER "com.example.siv3d-app"
 )
 
 # アプリに埋め込むリソースを定義 / Define resources to embed in the application
@@ -81,4 +82,15 @@ siv3d_resources(
     MACOS   EMBED "icon.icns"
     WINDOWS EMBED "icon.ico"
     ALL     COPY  "example"
+)
+
+# 実行ファイル・アプリバンドルの各種プロパティの設定 / Properties of the executable and app bundle
+
+set_target_properties(Siv3DApp PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/App"
+    OUTPUT_NAME ${APP_EXECUTABLE_NAME}
+    DEBUG_POSTFIX "-debug"
+    MACOSX_BUNDLE ON
+    MACOSX_BUNDLE_INFO_PLIST "${PROJECT_SOURCE_DIR}/src/macOS/Info.plist"
+    MACOSX_BUNDLE_GUI_IDENTIFIER ${APP_MACOS_IDENTIFIER}
 )
