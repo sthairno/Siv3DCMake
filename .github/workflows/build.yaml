@@ -1,4 +1,5 @@
 name: Build
+run-name: Build ${{ inputs.os }} app (${{ inputs.configuration }} build)
 
 on:
   workflow_dispatch:
