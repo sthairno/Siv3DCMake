@@ -41,6 +41,17 @@ target_link_libraries(Siv3DApp
     PRIVATE Siv3D::Siv3D
 )
 
+# 実行ファイル・アプリバンドルの各種プロパティの設定 / Properties of the executable and app bundle
+
+set_target_properties(Siv3DApp PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/App"
+    OUTPUT_NAME ${APP_EXECUTABLE_NAME}
+    DEBUG_POSTFIX "-debug"
+    MACOSX_BUNDLE ON
+    MACOSX_BUNDLE_INFO_PLIST "${PROJECT_SOURCE_DIR}/src/macOS/Info.plist"
+    MACOSX_BUNDLE_GUI_IDENTIFIER ${APP_MACOS_IDENTIFIER}
+)
+
 # アプリに埋め込むリソースを定義 / Define resources to embed in the application
 #
 # 使い方 / Usage:
@@ -82,15 +93,4 @@ siv3d_resources(
     MACOS   EMBED "icon.icns"
     WINDOWS EMBED "icon.ico"
     ALL     COPY  "example"
-)
-
-# 実行ファイル・アプリバンドルの各種プロパティの設定 / Properties of the executable and app bundle
-
-set_target_properties(Siv3DApp PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/App"
-    OUTPUT_NAME ${APP_EXECUTABLE_NAME}
-    DEBUG_POSTFIX "-debug"
-    MACOSX_BUNDLE ON
-    MACOSX_BUNDLE_INFO_PLIST "${PROJECT_SOURCE_DIR}/src/macOS/Info.plist"
-    MACOSX_BUNDLE_GUI_IDENTIFIER ${APP_MACOS_IDENTIFIER}
 )
