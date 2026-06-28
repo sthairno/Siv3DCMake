@@ -21,7 +21,7 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ fromJSON('{"windows":"windows-latest","macos":"macos-latest","linux":"ubuntu-latest"}')[inputs.os] }}
+    runs-on: ${{ fromJSON('{"windows":"windows-latest","macos":"macos-latest","linux":"ubuntu-22.04"}')[inputs.os] }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -45,7 +45,26 @@ jobs:
           set -euxo pipefail
           sudo apt-get update
           sudo apt-get install -y ./libsiv3d-dev.deb
-
+  
+      - name: Download AppImage tools
+        id: appimage-tools
+        if: ${{ inputs.os == 'linux' }}
+        shell: bash
+        env:
+          APPIMAGETOOL_URL: https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          LINUXDEPLOY_URL: https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+        run: |
+          set -euxo pipefail
+          appimagetool_path="${RUNNER_TEMP}/appimagetool-x86_64.AppImage"
+          linuxdeploy_path="${RUNNER_TEMP}/linuxdeploy-x86_64.AppImage"
+          curl -L --fail "${APPIMAGETOOL_URL}" -o "${appimagetool_path}"
+          curl -L --fail "${LINUXDEPLOY_URL}" -o "${linuxdeploy_path}"
+          chmod +x "${appimagetool_path}" "${linuxdeploy_path}"
+          {
+            echo "appimagetool=${appimagetool_path}"
+            echo "linuxdeploy=${linuxdeploy_path}"
+          } >> "${GITHUB_OUTPUT}"
+  
       - uses: actions/cache@v5
         if: ${{ inputs.os != 'linux' }}
         with:
@@ -56,6 +75,18 @@ jobs:
 
       - name: Configure and build
         run: cmake --workflow --preset workflow-${{ inputs.os }}-${{ inputs.configuration }}
+
+      - name: Create AppImage
+        if: ${{ inputs.os == 'linux' }}
+        shell: bash
+        run: |
+          set -euxo pipefail
+          configuration="${{ inputs.configuration }}"
+          build_type="${configuration^}"
+          cmake \
+            -DAPPIMAGE_LINUXDEPLOY="${{ steps.appimage-tools.outputs.linuxdeploy }}" \
+            -DAPPIMAGE_APPIMAGETOOL="${{ steps.appimage-tools.outputs.appimagetool }}" \
+            -P "build/${build_type}/GenerateAppImage.cmake"
 
       - uses: actions/upload-artifact@v7
         with:
