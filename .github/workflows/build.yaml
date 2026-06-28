@@ -10,6 +10,7 @@ on:
         options:
           - windows
           - macos
+          - linux
       configuration:
         description: Build configuration
         type: choice
@@ -25,7 +26,28 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Download and verify Siv3D deb package
+        if: ${{ inputs.os == 'linux' }}
+        shell: bash
+        run: |
+          set -euxo pipefail
+          curl "https://drive.usercontent.google.com/download?id=1OH0AIiAWX-4136wVmJ9XaqrLi4m8ejR3&confirm=t" -o libsiv3d-dev.deb
+          MIME_TYPE=$(file -b --mime-type libsiv3d-dev.deb)
+          if [ "$MIME_TYPE" != "application/vnd.debian.binary-package" ]; then
+            echo "Unexpected MIME type: ${MIME_TYPE}"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        if: ${{ inputs.os == 'linux' }}
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ./libsiv3d-dev.deb
+
       - uses: actions/cache@v5
+        if: ${{ inputs.os != 'linux' }}
         with:
           path: siv3d/sdk
           key: siv3d-sdk-${{ inputs.os }}-${{ hashFiles('siv3d/platform/*.cmake', 'siv3d/Siv3D.cmake') }}
